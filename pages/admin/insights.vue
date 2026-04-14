@@ -67,6 +67,25 @@
                     </div>
                 </div>
 
+                <div v-if="riskDashboard || complianceStats" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                        <p class="text-gray-500 text-xs mb-1">Assessed Artists</p>
+                        <p class="text-2xl font-black text-white">{{ riskDashboard?.assessedArtists ?? 0 }}</p>
+                    </div>
+                    <div class="bg-red-900/10 border border-red-900/20 rounded-xl p-4">
+                        <p class="text-red-400/70 text-xs mb-1">High Risk (ML + Rules)</p>
+                        <p class="text-2xl font-black text-red-400">{{ riskDashboard?.highRiskCount ?? 0 }}</p>
+                    </div>
+                    <div class="bg-yellow-900/10 border border-yellow-900/20 rounded-xl p-4">
+                        <p class="text-yellow-400/70 text-xs mb-1">Flagged For Audit</p>
+                        <p class="text-2xl font-black text-yellow-400">{{ riskDashboard?.flaggedForAudit ?? 0 }}</p>
+                    </div>
+                    <div class="bg-blue-900/10 border border-blue-900/20 rounded-xl p-4">
+                        <p class="text-blue-400/70 text-xs mb-1">ZIM Outstanding Tax</p>
+                        <p class="text-2xl font-black text-blue-400">${{ formatCurrency(complianceStats?.totalOutstandingTax ?? 0) }}</p>
+                    </div>
+                </div>
+
                 <!-- Search -->
                 <div class="relative mb-6">
                     <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -234,6 +253,8 @@ import { ref, computed } from 'vue'
 const loading = ref(false)
 const error = ref('')
 const artistInsights = ref([])
+const riskDashboard = ref(null)
+const complianceStats = ref(null)
 const activeFilter = ref('all')
 const searchQuery = ref('')
 const expanded = ref(new Set())
@@ -284,6 +305,26 @@ const fetchInsights = async () => {
     artistInsights.value = []
 
     try {
+        let riskResults = []
+
+        // Refresh and pull ML + rules risk analysis.
+        try {
+            const bulkRisk = await $fetch('http://localhost:8080/api/risk/analyze/all', { method: 'POST' })
+            riskResults = bulkRisk?.results || []
+        } catch (_) { /* optional */ }
+
+        try {
+            riskDashboard.value = await $fetch('http://localhost:8080/api/risk/dashboard')
+        } catch (_) {
+            riskDashboard.value = null
+        }
+
+        try {
+            complianceStats.value = await $fetch('http://localhost:8080/api/compliance/statistics')
+        } catch (_) {
+            complianceStats.value = null
+        }
+
         // 1. Fetch all onboarded artists (non-ADMIN, role-filtered by backend)
         const artistsData = await $fetch('http://localhost:8080/api/artists/get-all-artists')
         const artists = artistsData?.artists || []
@@ -310,6 +351,7 @@ const fetchInsights = async () => {
         const insights = artists.map((artist, idx) => {
             const compResult = complianceResults[idx]
             const compliance = compResult.status === 'fulfilled' ? compResult.value : null
+            const risk = riskResults.find(r => r.artistId === artist.id)
 
             // Pull live fields from compliance report DTO
             const totalVideos     = compliance?.totalVideosToDate ?? 0
@@ -385,6 +427,36 @@ const fetchInsights = async () => {
                 insightsList.push({ severity: 'info', title: 'ℹ No Issues Detected', message: `No compliance issues or significant content trends detected for ${artist.name} at this time.` })
             }
 
+            if (risk?.riskLevel === 'HIGH') {
+                insightsList.unshift({
+                    severity: 'danger',
+                    title: `🧠 ML/Rules High Risk (${Math.round((risk.riskScore || 0) * 100)}%)`,
+                    message: risk.recommendation || 'Potential tax evasion behavior detected by ML and rules engine.'
+                })
+            } else if (risk?.riskLevel === 'MEDIUM') {
+                insightsList.unshift({
+                    severity: 'warning',
+                    title: `🧠 ML/Rules Medium Risk (${Math.round((risk.riskScore || 0) * 100)}%)`,
+                    message: 'Potential compliance risk detected. Monitor and review this account.'
+                })
+            }
+
+            if (risk?.indicators?.length) {
+                risk.indicators.slice(0, 3).forEach((indicator) => {
+                    const text = String(indicator || '')
+                    const isZimTaxSignal =
+                        text.toLowerCase().includes('threshold') ||
+                        text.toLowerCase().includes('missed tax') ||
+                        text.toLowerCase().includes('outstanding')
+
+                    insightsList.push({
+                        severity: isZimTaxSignal ? 'warning' : 'info',
+                        title: isZimTaxSignal ? '🇿🇼 ZIM Tax Signal' : '📌 Risk Indicator',
+                        message: text
+                    })
+                })
+            }
+
             return {
                 id: artist.id,
                 name: artist.name,
@@ -398,6 +470,8 @@ const fetchInsights = async () => {
                 totalShots,
                 shortsEstimatedRevenue,
                 shortsPercentage,
+                riskScore: risk?.riskScore ?? 0,
+                riskLevel: risk?.riskLevel ?? 'LOW',
                 predictedTaxIncrease,
                 monthPredictions,
                 insights: insightsList

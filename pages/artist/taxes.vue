@@ -42,9 +42,9 @@
                     <p class="text-2xl font-black text-white">{{ formatNumber(totalViews) }}</p>
                 </div>
                 <div class="bg-red-900/10 border border-red-900/20 rounded-xl p-4">
-                    <p class="text-red-400/70 text-xs mb-1">Total DST Liability</p>
-                    <p class="text-2xl font-black text-red-400">${{ formatCurrency(totalDST) }}</p>
-                    <p class="text-red-400/50 text-[10px] mt-0.5">10% on all revenue</p>
+                    <p class="text-red-400/70 text-xs mb-1">Outstanding Tax Due</p>
+                    <p class="text-2xl font-black text-red-400">${{ formatCurrency(officialOutstandingTax) }}</p>
+                    <p class="text-red-400/50 text-[10px] mt-0.5">Official backend compliance balance</p>
                 </div>
                 <div class="bg-green-900/10 border border-green-900/20 rounded-xl p-4">
                     <p class="text-green-400/70 text-xs mb-1">Est. Gross Revenue</p>
@@ -57,8 +57,8 @@
             <div class="mb-6 bg-gradient-to-r from-red-950/40 via-gray-900 to-gray-900 border border-red-900/30 rounded-2xl p-5 flex items-center justify-between gap-4">
                 <div>
                     <p class="text-xs text-red-400 font-semibold uppercase tracking-wider mb-1">📅 {{ currentMonthName }} Forecast</p>
-                    <p class="text-3xl font-black text-white">${{ formatCurrency(totalDST) }}</p>
-                    <p class="text-gray-400 text-sm mt-1">Projected Digital Service Tax based on current video performance</p>
+                    <p class="text-3xl font-black text-white">${{ formatCurrency(officialOutstandingTax) }}</p>
+                    <p class="text-gray-400 text-sm mt-1">Current official outstanding balance from tax records</p>
                 </div>
                 <div class="flex items-center space-x-6 text-center">
                     <div>
@@ -75,7 +75,7 @@
                     </div>
                     <div>
                         <p class="text-xs text-gray-500 mb-1">Per-video avg</p>
-                        <p class="text-xl font-bold text-blue-400">${{ formatCurrency(avgTaxPerVideo) }}</p>
+                        <p class="text-xl font-bold text-blue-400">${{ formatCurrency(avgOfficialTaxPerVideo) }}</p>
                     </div>
                 </div>
             </div>
@@ -251,6 +251,7 @@ const DST_RATE    = 0.10     // 10%
 const loading    = ref(false)
 const error      = ref('')
 const videoRows  = ref([])
+const compliance = ref(null)
 const search     = ref('')
 const filter     = ref('all')
 const page       = ref(1)
@@ -291,6 +292,11 @@ const totalViews   = computed(() => videoRows.value.reduce((s, r) => s + r.viewC
 const totalRevenue = computed(() => videoRows.value.reduce((s, r) => s + r.estRevenue, 0))
 const totalDST     = computed(() => videoRows.value.reduce((s, r) => s + r.dst, 0))
 const avgTaxPerVideo = computed(() => videoRows.value.length ? totalDST.value / videoRows.value.length : 0)
+const officialOutstandingTax = computed(() => Number(compliance.value?.outstandingTax || 0))
+const avgOfficialTaxPerVideo = computed(() => {
+    if (!videoRows.value.length) return officialOutstandingTax.value
+    return officialOutstandingTax.value / videoRows.value.length
+})
 
 // ---- Fetch ----
 const loadData = async () => {
@@ -306,6 +312,9 @@ const loadData = async () => {
     }
 
     try {
+        const complianceData = await $fetch(`http://localhost:8080/api/compliance/${artistId}`)
+        compliance.value = complianceData
+
         const chanData = await $fetch(`http://localhost:8080/api/youtube/channel?artistId=${artistId}`)
         if (!chanData?.channelId) {
             error.value = 'YouTube channel not connected. Please authorise your channel from the dashboard.'

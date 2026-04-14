@@ -17,7 +17,7 @@
         </div>
 
         <button
-          @click="showPaymentModal = true"
+          @click="openPaymentModal"
           class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-5 py-3 rounded-lg font-medium flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200 w-full sm:w-auto"
         >
           <svg
@@ -333,23 +333,10 @@
                       class="w-full px-3 py-2.5 rounded-lg bg-gray-900 border border-gray-700 text-white placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     />
                     <p class="text-xs text-gray-500 mt-1">
-                      Outstanding: ${{
+                      Tax amount due: ${{
                         formatNumber(taxCompliance?.outstandingTax)
                       }}
                     </p>
-                  </div>
-
-                  <!-- Tax ID -->
-                  <div>
-                    <label
-                      class="block text-sm font-medium text-gray-300 mb-1 text-left"
-                    >
-                      Complaince ID
-                    </label>
-                    <input
-                      v-model="paymentForm.complianceID"
-                      class="w-full px-3 py-2.5 rounded-lg bg-gray-900 border border-gray-700 text-gray-400"
-                    />
                   </div>
 
                   <!-- Payment Method (full width) -->
@@ -466,9 +453,9 @@ const paymentMethods = [
 ];
 
 // Fetch data
-const { data: complianceData } = await useFetch(
-  "http://localhost:8080/api/compliance/initialize-all-compliance",
-  { method: "POST" }
+const { data: complianceData, pending: compliancePending, refresh: refreshCompliance } = await useFetch(
+  `http://localhost:8080/api/compliance/${artistId}`,
+  { immediate: !!artistId }
 );
 
 const {
@@ -480,9 +467,7 @@ const {
 );
 
 // Computed
-const taxCompliance = computed(() =>
-  complianceData.value?.find((c) => c.email === artistEmail)
-);
+const taxCompliance = computed(() => complianceData.value || null);
 
 const payments = computed(() => paymentsData.value || []);
 
@@ -498,9 +483,9 @@ const isFormValid = computed(() => {
 
 // Watch effects
 watchEffect(() => {
-  isLoading.value = pending.value;
-  if (taxCompliance.value?.complianceID) {
-    paymentForm.value.complianceID = taxCompliance.value.complianceID;
+  isLoading.value = pending.value || compliancePending.value;
+  if (taxCompliance.value?.complianceStatusId) {
+    paymentForm.value.complianceID = taxCompliance.value.complianceStatusId;
   }
 });
 
@@ -521,8 +506,8 @@ const submitPayment = async () => {
     paymentSuccess.value =
       "Payment initiated successfully! Redirecting to payment gateway...";
 
-    // Refresh payments data
-    await refresh();
+    // Refresh payment and compliance balances
+    await Promise.all([refresh(), refreshCompliance()]);
 
     // Close modal after success
     setTimeout(() => {
@@ -548,8 +533,16 @@ const closeModal = () => {
   paymentForm.value.narration = "";
 };
 
+const openPaymentModal = () => {
+  const outstanding = Number(taxCompliance.value?.outstandingTax || 0);
+  if (outstanding > 0) {
+    paymentForm.value.amount = Number(outstanding.toFixed(2));
+  }
+  showPaymentModal.value = true;
+};
+
 const refreshPayments = async () => {
-  await refresh();
+  await Promise.all([refresh(), refreshCompliance()]);
 };
 
 const viewPaymentDetails = (payment) => {
