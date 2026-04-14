@@ -99,13 +99,45 @@ const API_BASE_URL = 'http://localhost:8080/oauth2'
 // Check for token in URL on component mount
 onMounted(() => {
   const token = route.query.token
+  const artistId = route.query.artistId
   role.value = route.query.role
 
   if (token) {
     console.log('🔑 Token detected in URL')
     handleTokenFromBackend(token)
+  } else if (artistId) {
+    handleArtistFromBackend(artistId)
   }
 })
+
+const handleArtistFromBackend = async (artistId) => {
+  try {
+    localStorage.clear()
+    localStorage.setItem('artistID', String(artistId))
+    if (role.value) {
+      localStorage.setItem('role', String(role.value))
+    }
+
+    try {
+      const profile = await $fetch(`${API_BASE_URL}/get-profile-by-/${encodeURIComponent(String(artistId))}`)
+      if (profile?.email) localStorage.setItem('artistEmail', profile.email)
+      if (profile?.name) localStorage.setItem('artistName', profile.name)
+    } catch (_) {
+      // Profile fetch is best-effort; ID is enough for backend APIs.
+    }
+
+    success.value = 'Login successful! Redirecting...'
+    router.replace({ query: {} })
+    if (role.value === 'ADMIN') {
+      setTimeout(() => router.push('/admin/'), 800)
+    } else {
+      setTimeout(() => router.push('/artist/'), 800)
+    }
+  } catch (e) {
+    console.error('🔥 Error handling artist redirect:', e)
+    error.value = 'Failed to process authentication'
+  }
+}
 
 const handleTokenFromBackend = async (token) => {
   try {
