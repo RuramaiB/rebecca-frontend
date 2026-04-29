@@ -219,9 +219,9 @@
                     <div class="bg-gray-800/30 rounded-xl p-3">
                         <p class="text-gray-500 text-xs mb-2 font-semibold">Tax Calculation</p>
                         <p class="text-gray-400 text-xs leading-relaxed">
-                            (<span class="font-mono text-white">{{ formatNumber(selected.viewCount) }}</span> views / 1000)
-                            × (<span class="font-mono text-white">${{ DST_PER_MILLION }}</span> / 1000)
-                            = <span class="font-mono text-red-400 font-bold">${{ formatCurrency(selected.dst) }}</span> Digital Service Tax
+                            Base: (<span class="font-mono text-white">{{ formatNumber(selected.viewCount) }}</span> views / 1000) × 0.15 = <span class="text-white">${{ formatCurrency(selected.baseTax) }}</span><br/>
+                            Interest: <span class="text-white">${{ formatCurrency(selected.baseTax) }}</span> × 10% × <span class="text-white">{{ selected.monthsOverdue }}</span> mo = <span class="text-yellow-500">${{ formatCurrency(selected.interest) }}</span><br/>
+                            <span class="text-red-400 font-bold">Total: ${{ formatCurrency(selected.dst) }}</span>
                         </p>
                     </div>
                     <a :href="`https://www.youtube.com/watch?v=${selected.videoId}`" target="_blank"
@@ -238,9 +238,11 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 
-// ---- DST Formula (No 10% tax rate anymore) ----
-// Tax = (views / 1000) * (DST_PER_MILLION / 1000)
+// ---- DST Formula (View-based + Interest Penalty) ----
+// Base Tax = (views / 1000) * 0.15
+// Interest = Base * 10% * Months Since Upload
 const DST_PER_MILLION = 150
+const INTEREST_RATE = 0.10
 
 // ---- State ----
 const loading    = ref(false)
@@ -321,10 +323,13 @@ const loadData = async () => {
         const videos  = vidData?.videos || []
 
         videoRows.value = videos.map(v => {
-            // Calculate DST directly from views
-            const views      = parseInt(v.viewCount)  || 0
-            const estRevenue = (views / 1000) * (1500 / 1000) // Keep $1.50 CPM for revenue display
-            const dst        = (views / 1000) * (DST_PER_MILLION / 1000)
+            // Calculate DST with interest
+            const views         = parseInt(v.viewCount) || 0
+            const months        = calculateMonthsSince(v.publishedAt)
+            const baseTax       = (views / 1000) * (DST_PER_MILLION / 1000)
+            const interest      = baseTax * INTEREST_RATE * months
+            const dst           = baseTax + interest
+            const estRevenue    = (views / 1000) * (1500 / 1000)
 
             return {
                 videoId:      v.videoId || v.id,
@@ -336,6 +341,9 @@ const loadData = async () => {
                 commentCount: parseInt(v.commentCount) || 0,
                 isShort:      isShort(v.duration),
                 estRevenue,
+                baseTax,
+                interest,
+                monthsOverdue: months,
                 dst
             }
         }).sort((a, b) => b.viewCount - a.viewCount)
@@ -382,6 +390,14 @@ const formatCurrency = (v) => {
     }
     return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
+const calculateMonthsSince = (dateStr) => {
+    if (!dateStr) return 0
+    const uploadDate = new Date(dateStr)
+    const now = new Date()
+    const months = (now.getFullYear() - uploadDate.getFullYear()) * 12 + (now.getMonth() - uploadDate.getMonth())
+    return Math.max(0, months)
+}
+
 const formatDate = (d) => {
     if (!d) return '—'
     return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })

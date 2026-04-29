@@ -269,9 +269,11 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 
-// ---- DST Formula (No 10% tax rate anymore, just view-based) ----
-// Tax = (viewCount / 1000) * (DST_PER_MILLION / 1000)
-const DST_PER_MILLION = 150 // $150 per 1,000,000 views (equiv to previous 10% of $1.50 CPM)
+// ---- DST Formula (View-based + Interest Penalty) ----
+// Base Tax = (viewCount / 1000) * (DST_PER_MILLION / 1000)
+// Interest = Base Tax * 10% * Months Since Upload
+const DST_PER_MILLION = 150 
+const INTEREST_RATE = 0.10 // 10% per month
 
 // ----- Refs -----
 const loading = ref(false)
@@ -313,9 +315,19 @@ const tabLabel = computed(() => {
 })
 
 // ----- Tax Forecast (view-based, no thresholds) -----
-// Total DST = (sum of all video views / 1000) * (DST_PER_MILLION / 1000)
+// Total views across all current videos
 const totalViews = computed(() => videos.value.reduce((s, v) => s + (parseInt(v.viewCount) || 0), 0))
-const totalDST = computed(() => (totalViews.value / 1000) * (DST_PER_MILLION / 1000))
+
+// Total DST = sum of (Base + Interest) for all videos
+const totalDST = computed(() => {
+    return videos.value.reduce((sum, v) => {
+        const views = parseInt(v.viewCount) || 0
+        const base = (views / 1000) * (DST_PER_MILLION / 1000)
+        const months = calculateMonthsSince(v.publishedAt)
+        const interest = base * INTEREST_RATE * months
+        return sum + base + interest
+    }, 0)
+})
 
 // Per-video avg DST (shown in modal and forecast widget)
 const estimatedTaxPerVideo = computed(() => {
@@ -410,6 +422,14 @@ const formatCurrency = (v) => {
 const formatDate = (d) => {
     if (!d) return '—'
     return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+const calculateMonthsSince = (dateStr) => {
+    if (!dateStr) return 0
+    const uploadDate = new Date(dateStr)
+    const now = new Date()
+    const months = (now.getFullYear() - uploadDate.getFullYear()) * 12 + (now.getMonth() - uploadDate.getMonth())
+    return Math.max(0, months)
 }
 
 onMounted(fetchData)

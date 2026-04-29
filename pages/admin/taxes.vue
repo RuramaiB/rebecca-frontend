@@ -300,8 +300,16 @@
                         <div class="bg-gray-800/50 rounded-xl p-4"><p class="text-gray-500 text-xs mb-1">Videos</p><p class="text-white font-bold text-xl">{{ selectedRecord.videoCount || 0 }}</p></div>
                         <div class="bg-red-950/20 border border-red-900/30 rounded-xl p-4"><p class="text-red-400/70 text-xs mb-1">Shorts</p><p class="text-red-400 font-bold text-xl">{{ selectedRecord.shotCount || 0 }}</p></div>
                         <div class="bg-gray-800/50 rounded-xl p-4"><p class="text-gray-500 text-xs mb-1">Gross Revenue</p><p class="text-white font-bold text-xl">${{ formatCurrency(selectedRecord.grossRevenue) }}</p></div>
-                        <div class="bg-red-950/10 rounded-xl p-4"><p class="text-gray-500 text-xs mb-1">Tax Amount</p><p class="text-red-400 font-bold text-xl">${{ formatCurrency(selectedRecord.taxAmount) }}</p></div>
-                        <div class="bg-green-950/10 rounded-xl p-4 col-span-2"><p class="text-gray-500 text-xs mb-1">Net Amount</p><p class="text-green-400 font-bold text-2xl">${{ formatCurrency(selectedRecord.netAmount) }}</p></div>
+                        <div class="bg-red-950/20 border border-red-900/30 rounded-xl p-4 col-span-2">
+                            <p class="text-gray-500 text-xs mb-2 font-semibold">Financial Breakdown</p>
+                            <div class="space-y-1">
+                                <p class="text-white text-xs">Base Tax: <span class="float-right font-mono">${{ formatCurrency(selectedRecord.baseTaxAmount) }}</span></p>
+                                <p class="text-yellow-500 text-xs">Interest (10%/mo): <span class="float-right font-mono">${{ formatCurrency(selectedRecord.interestAmount) }}</span></p>
+                                <div class="border-t border-red-900/50 mt-2 pt-2">
+                                    <p class="text-red-400 text-lg font-black">Total Due: <span class="float-right">${{ formatCurrency(selectedRecord.taxAmount) }}</span></p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="p-6 border-t border-gray-800 flex justify-end">
@@ -316,6 +324,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 
 const DST_PER_MILLION = 150
+const INTEREST_RATE = 0.10
 
 // ----- State -----
 const viewMode = ref('table')
@@ -405,7 +414,10 @@ const loadVideoTable = async () => {
 
                 return videos.map(v => {
                     const views = parseInt(v.viewCount) || 0
-                    const estimatedTax = (views / 1000) * (DST_PER_MILLION / 1000)
+                    const months = calculateMonthsSince(v.publishedAt)
+                    const baseTax = (views / 1000) * (DST_PER_MILLION / 1000)
+                    const interest = baseTax * INTEREST_RATE * months
+                    const estimatedTax = baseTax + interest
 
                     return {
                         videoId: v.videoId || v.id,
@@ -489,6 +501,14 @@ const formatCurrency = (v) => {
         return val.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 })
     }
     return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+const calculateMonthsSince = (dateStr) => {
+    if (!dateStr) return 0
+    const uploadDate = new Date(dateStr)
+    const now = new Date()
+    const months = (now.getFullYear() - uploadDate.getFullYear()) * 12 + (now.getMonth() - uploadDate.getMonth())
+    return Math.max(0, months)
 }
 
 const formatDate = (d) => {
