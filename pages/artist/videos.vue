@@ -269,11 +269,9 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 
-// ---- DST Formula (no thresholds) ----
-// Revenue per video = (viewCount / 1000) * (REVENUE_PER_MILLION / 1000)
-// DST per video    = Revenue × 10%
-const REVENUE_PER_MILLION = 1500
-const DST_RATE = 0.10
+// ---- DST Formula (No 10% tax rate anymore, just view-based) ----
+// Tax = (viewCount / 1000) * (DST_PER_MILLION / 1000)
+const DST_PER_MILLION = 150 // $150 per 1,000,000 views (equiv to previous 10% of $1.50 CPM)
 
 // ----- Refs -----
 const loading = ref(false)
@@ -315,10 +313,9 @@ const tabLabel = computed(() => {
 })
 
 // ----- Tax Forecast (view-based, no thresholds) -----
-// Total revenue = (sum of all video views / 1000) * (REVENUE_PER_MILLION / 1000)
+// Total DST = (sum of all video views / 1000) * (DST_PER_MILLION / 1000)
 const totalViews = computed(() => videos.value.reduce((s, v) => s + (parseInt(v.viewCount) || 0), 0))
-const totalEstRevenue = computed(() => (totalViews.value / 1000) * (REVENUE_PER_MILLION / 1000))
-const totalDST = computed(() => totalEstRevenue.value * DST_RATE)
+const totalDST = computed(() => (totalViews.value / 1000) * (DST_PER_MILLION / 1000))
 
 // Per-video avg DST (shown in modal and forecast widget)
 const estimatedTaxPerVideo = computed(() => {
@@ -328,7 +325,7 @@ const estimatedTaxPerVideo = computed(() => {
 
 // The projected month-end tax = total DST across all current videos
 // (no extrapolation needed — each video's DST is already based on actual views)
-const projectedMonthRevenue = computed(() => totalEstRevenue.value)
+const projectedMonthRevenue = computed(() => (totalViews.value / 1000) * (1500 / 1000)) // Keep $1.50 CPM for revenue display
 const estimatedMonthEndTax = computed(() => totalDST.value)
 
 // ----- Data Fetching -----
@@ -403,7 +400,11 @@ const formatNumber = (n) => {
 
 const formatCurrency = (v) => {
     if (!v && v !== 0) return '0.00'
-    return parseFloat(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    const val = parseFloat(v)
+    if (val > 0 && val < 0.01) {
+        return val.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 })
+    }
+    return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 const formatDate = (d) => {

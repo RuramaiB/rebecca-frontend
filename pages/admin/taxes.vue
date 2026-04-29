@@ -315,8 +315,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 
-const TAX_RATE = 0.10
-const REVENUE_PER_MILLION = 1500
+const DST_PER_MILLION = 150
 
 // ----- State -----
 const viewMode = ref('table')
@@ -406,8 +405,7 @@ const loadVideoTable = async () => {
 
                 return videos.map(v => {
                     const views = parseInt(v.viewCount) || 0
-                    const estimatedRevenue = (views / 1000) * (REVENUE_PER_MILLION / 1000)
-                    const estimatedTax = estimatedRevenue * TAX_RATE
+                    const estimatedTax = (views / 1000) * (DST_PER_MILLION / 1000)
 
                     return {
                         videoId: v.videoId || v.id,
@@ -486,7 +484,11 @@ const formatNumber = (n) => {
 
 const formatCurrency = (v) => {
     if (!v && v !== 0) return '0.00'
-    return parseFloat(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    const val = parseFloat(v)
+    if (val > 0 && val < 0.01) {
+        return val.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 })
+    }
+    return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 const formatDate = (d) => {

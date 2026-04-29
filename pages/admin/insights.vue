@@ -525,6 +525,10 @@ const complianceBadge = (level) => {
 
 const formatCurrency = (v) => {
     if (!v && v !== 0) return '0.00'
-    return parseFloat(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    const val = parseFloat(v)
+    if (val > 0 && val < 0.01) {
+        return val.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 })
+    }
+    return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 </script>

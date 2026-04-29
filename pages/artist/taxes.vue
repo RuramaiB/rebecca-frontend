@@ -220,10 +220,8 @@
                         <p class="text-gray-500 text-xs mb-2 font-semibold">Tax Calculation</p>
                         <p class="text-gray-400 text-xs leading-relaxed">
                             (<span class="font-mono text-white">{{ formatNumber(selected.viewCount) }}</span> views / 1000)
-                            × (<span class="font-mono text-white">${{ REVENUE_PER_MILLION }}</span> / 1000)
-                            = <span class="font-mono text-green-400">${{ formatCurrency(selected.estRevenue) }}</span> revenue
-                            × <span class="font-mono text-white">10%</span> DST
-                            = <span class="font-mono text-red-400 font-bold">${{ formatCurrency(selected.dst) }}</span>
+                            × (<span class="font-mono text-white">${{ DST_PER_MILLION }}</span> / 1000)
+                            = <span class="font-mono text-red-400 font-bold">${{ formatCurrency(selected.dst) }}</span> Digital Service Tax
                         </p>
                     </div>
                     <a :href="`https://www.youtube.com/watch?v=${selected.videoId}`" target="_blank"
@@ -240,11 +238,9 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 
-// ---- DST Formula (no thresholds) ----
-// Revenue = (views / 1000) * (REVENUE_PER_MILLION / 1000)
-// DST = Revenue × 10%
-const REVENUE_PER_MILLION = 1500
-const DST_RATE    = 0.10     // 10%
+// ---- DST Formula (No 10% tax rate anymore) ----
+// Tax = (views / 1000) * (DST_PER_MILLION / 1000)
+const DST_PER_MILLION = 150
 
 // ---- State ----
 const loading    = ref(false)
@@ -325,10 +321,10 @@ const loadData = async () => {
         const videos  = vidData?.videos || []
 
         videoRows.value = videos.map(v => {
-            // Estimate revenue based on views
+            // Calculate DST directly from views
             const views      = parseInt(v.viewCount)  || 0
-            const estRevenue = (views / 1000) * (REVENUE_PER_MILLION / 1000)
-            const dst        = estRevenue * DST_RATE
+            const estRevenue = (views / 1000) * (1500 / 1000) // Keep $1.50 CPM for revenue display
+            const dst        = (views / 1000) * (DST_PER_MILLION / 1000)
 
             return {
                 videoId:      v.videoId || v.id,
@@ -380,7 +376,11 @@ const formatNumber = (n) => {
 }
 const formatCurrency = (v) => {
     if (!v && v !== 0) return '0.00'
-    return parseFloat(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    const val = parseFloat(v)
+    if (val > 0 && val < 0.01) {
+        return val.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 })
+    }
+    return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 const formatDate = (d) => {
     if (!d) return '—'
