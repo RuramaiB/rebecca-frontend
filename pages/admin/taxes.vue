@@ -404,18 +404,9 @@ const loadVideoTable = async () => {
                 const vidData = await $fetch(`http://localhost:8080/api/youtube/videos/${chanData.channelId}?artistId=${artist.id}`)
                 const videos = vidData?.videos || []
 
-                // Derive per-video tax from actual records if available, otherwise estimate from views
-                const taxInfo = taxByArtist[artist.id]
-                const avgTaxPerVideo = taxInfo && taxInfo.totalVideos > 0
-                    ? taxInfo.totalTax / taxInfo.totalVideos
-                    : null
-
                 return videos.map(v => {
                     const views = parseInt(v.viewCount) || 0
-                    // Use actual tax data if available; otherwise estimate: views × CPM × tax rate
-                    const estimatedTax = avgTaxPerVideo !== null
-                        ? avgTaxPerVideo
-                        : views * AVG_REVENUE_PER_VIEW * TAX_RATE
+                    const estimatedTax = views * AVG_REVENUE_PER_VIEW * TAX_RATE
 
                     return {
                         videoId: v.videoId || v.id,
