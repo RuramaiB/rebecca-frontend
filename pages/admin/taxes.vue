@@ -316,7 +316,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 
 const TAX_RATE = 0.10
-const AVG_REVENUE_PER_VIEW = 0.0015   // $0.0015 per view (typical YouTube CPM-based estimate)
+const REVENUE_PER_MILLION = 1500
 
 // ----- State -----
 const viewMode = ref('table')
@@ -406,7 +406,8 @@ const loadVideoTable = async () => {
 
                 return videos.map(v => {
                     const views = parseInt(v.viewCount) || 0
-                    const estimatedTax = views * AVG_REVENUE_PER_VIEW * TAX_RATE
+                    const estimatedRevenue = (views / 1000) * (REVENUE_PER_MILLION / 1000)
+                    const estimatedTax = estimatedRevenue * TAX_RATE
 
                     return {
                         videoId: v.videoId || v.id,

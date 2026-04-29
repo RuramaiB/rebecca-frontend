@@ -219,8 +219,8 @@
                     <div class="bg-gray-800/30 rounded-xl p-3">
                         <p class="text-gray-500 text-xs mb-2 font-semibold">Tax Calculation</p>
                         <p class="text-gray-400 text-xs leading-relaxed">
-                            <span class="font-mono text-white">{{ formatNumber(selected.viewCount) }}</span> views
-                            × <span class="font-mono text-white">$0.0015</span> CPM
+                            (<span class="font-mono text-white">{{ formatNumber(selected.viewCount) }}</span> views / 1000)
+                            × (<span class="font-mono text-white">${{ REVENUE_PER_MILLION }}</span> / 1000)
                             = <span class="font-mono text-green-400">${{ formatCurrency(selected.estRevenue) }}</span> revenue
                             × <span class="font-mono text-white">10%</span> DST
                             = <span class="font-mono text-red-400 font-bold">${{ formatCurrency(selected.dst) }}</span>
@@ -241,10 +241,9 @@
 import { ref, computed, watch, onMounted } from 'vue'
 
 // ---- DST Formula (no thresholds) ----
-// Revenue = views × $0.0015 CPM
+// Revenue = (views / 1000) * (REVENUE_PER_MILLION / 1000)
 // DST = Revenue × 10%
-// → DST per video = views × $0.00015
-const CPM_RATE    = 0.0015   // per view
+const REVENUE_PER_MILLION = 1500
 const DST_RATE    = 0.10     // 10%
 
 // ---- State ----
@@ -326,8 +325,9 @@ const loadData = async () => {
         const videos  = vidData?.videos || []
 
         videoRows.value = videos.map(v => {
+            // Estimate revenue based on views
             const views      = parseInt(v.viewCount)  || 0
-            const estRevenue = views * CPM_RATE
+            const estRevenue = (views / 1000) * (REVENUE_PER_MILLION / 1000)
             const dst        = estRevenue * DST_RATE
 
             return {

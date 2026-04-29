@@ -270,9 +270,9 @@
 import { ref, computed, onMounted, watch } from 'vue'
 
 // ---- DST Formula (no thresholds) ----
-// Revenue per video = viewCount × $0.0015 CPM
+// Revenue per video = (viewCount / 1000) * (REVENUE_PER_MILLION / 1000)
 // DST per video    = Revenue × 10%
-const CPM_RATE = 0.0015
+const REVENUE_PER_MILLION = 1500
 const DST_RATE = 0.10
 
 // ----- Refs -----
@@ -315,9 +315,9 @@ const tabLabel = computed(() => {
 })
 
 // ----- Tax Forecast (view-based, no thresholds) -----
-// Total revenue = sum of all video views × CPM rate
+// Total revenue = (sum of all video views / 1000) * (REVENUE_PER_MILLION / 1000)
 const totalViews = computed(() => videos.value.reduce((s, v) => s + (parseInt(v.viewCount) || 0), 0))
-const totalEstRevenue = computed(() => totalViews.value * CPM_RATE)
+const totalEstRevenue = computed(() => (totalViews.value / 1000) * (REVENUE_PER_MILLION / 1000))
 const totalDST = computed(() => totalEstRevenue.value * DST_RATE)
 
 // Per-video avg DST (shown in modal and forecast widget)
