@@ -140,6 +140,10 @@
                                         <p class="text-sm font-bold text-red-400">{{ artist.totalShots }}</p>
                                     </div>
                                     <div>
+                                        <p class="text-[10px] text-gray-500">Total Tax Due</p>
+                                        <p class="text-sm font-bold text-white">${{ formatCurrency(artist.totalTaxDue) }}</p>
+                                    </div>
+                                    <div>
                                         <p class="text-[10px] text-gray-500">Outstanding Tax</p>
                                         <p class="text-sm font-bold" :class="artist.outstandingTax > 0 ? 'text-red-400' : 'text-green-400'">${{ formatCurrency(artist.outstandingTax) }}</p>
                                     </div>
@@ -201,6 +205,10 @@
                                         <div class="flex justify-between items-center">
                                             <p class="text-xs text-gray-500">Current Outstanding</p>
                                             <p class="text-sm font-bold" :class="artist.outstandingTax > 0 ? 'text-red-400' : 'text-green-400'">${{ formatCurrency(artist.outstandingTax) }}</p>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <p class="text-xs text-gray-500">Total Tax Due</p>
+                                            <p class="text-sm font-bold text-white">${{ formatCurrency(artist.totalTaxDue) }}</p>
                                         </div>
                                         <div class="flex justify-between items-center">
                                             <p class="text-xs text-gray-500">Total Tax Paid</p>
@@ -307,6 +315,13 @@ const fetchInsights = async () => {
     try {
         let riskResults = []
 
+        // 0. Trigger global compliance & tax recalculation first to ensure fresh data
+        try {
+            await $fetch('http://localhost:8080/api/compliance/initialize-all-compliance', { method: 'POST' })
+        } catch (err) {
+            console.error('Failed to initialize compliance:', err)
+        }
+
         // Refresh and pull ML + rules risk analysis.
         try {
             const bulkRisk = await $fetch('http://localhost:8080/api/risk/analyze/all', { method: 'POST' })
@@ -358,6 +373,7 @@ const fetchInsights = async () => {
             const totalShots      = compliance?.totalShotsToDate ?? 0
             const outstandingTax  = compliance?.outstandingTax ?? 0
             const totalTaxPaid    = compliance?.totalTaxPaid ?? 0
+            const totalTaxDue     = compliance?.totalTaxDue ?? 0
             const taxCompliant    = compliance?.taxCompliant ?? true
             const complianceLevel = compliance?.complianceLevel ?? 'UNKNOWN'
             const missedPayments  = compliance?.missedPayments ?? 0
@@ -465,6 +481,7 @@ const fetchInsights = async () => {
                 complianceLevel,
                 outstandingTax,
                 totalTaxPaid,
+                totalTaxDue,
                 totalRevenue,
                 totalVideos,
                 totalShots,

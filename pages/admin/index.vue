@@ -59,7 +59,7 @@
 
             <template v-else>
               <!-- Stats Grid -->
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
                 <div class="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-colors">
                   <div class="flex items-center justify-between mb-4">
                     <div class="p-2 bg-blue-500/10 rounded-lg">
@@ -122,6 +122,22 @@
                   <div class="text-sm text-gray-400 mb-1">Non-Compliant Artists</div>
                   <div class="text-2xl font-bold text-red-400">{{ stats.nonCompliant }}</div>
                   <div class="text-xs text-gray-500 mt-2">Require attention</div>
+                </div>
+
+                <div class="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-colors">
+                  <div class="flex items-center justify-between mb-4">
+                    <div class="p-2 bg-purple-500/10 rounded-lg">
+                      <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                      </svg>
+                    </div>
+                    <span class="text-xs font-medium px-2 py-1 rounded-full bg-purple-500/10 text-purple-400">
+                      Liability
+                    </span>
+                  </div>
+                  <div class="text-sm text-gray-400 mb-1">Total Tax Due</div>
+                  <div class="text-2xl font-bold text-white">${{ formatNumber(stats.totalTaxDue) }}</div>
+                  <div class="text-xs text-gray-500 mt-2">Total aggregate liability</div>
                 </div>
               </div>
 
@@ -325,7 +341,8 @@ const stats = computed(() => {
     nonCompliant,
     totalRevenue,
     totalTaxCollected,
-    outstandingTax
+    outstandingTax,
+    totalTaxDue: totalTaxCollected + outstandingTax
   }
 })
 
