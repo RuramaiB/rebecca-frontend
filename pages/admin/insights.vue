@@ -131,14 +131,14 @@
                             <div class="flex items-center space-x-6">
                                 <!-- Mini stats -->
                                 <div class="hidden md:flex items-center space-x-5 text-center">
-                                    <div>
+                                    <!-- <div>
                                         <p class="text-[10px] text-gray-500">Videos</p>
                                         <p class="text-sm font-bold text-white">{{ artist.totalVideos }}</p>
                                     </div>
                                     <div>
                                         <p class="text-[10px] text-gray-500">Shorts</p>
                                         <p class="text-sm font-bold text-red-400">{{ artist.totalShots }}</p>
-                                    </div>
+                                    </div> -->
                                     <div>
                                         <p class="text-[10px] text-gray-500">Total Tax Due</p>
                                         <p class="text-sm font-bold text-white">${{ formatCurrency(artist.totalTaxDue) }}</p>
