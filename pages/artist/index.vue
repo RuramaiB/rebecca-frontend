@@ -107,7 +107,7 @@
               </div>
 
               <!-- Financial Stats Grid -->
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <!-- Total Revenue -->
                 <div class="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-colors">
                   <div class="flex items-center justify-between mb-4">
@@ -125,41 +125,9 @@
                   <div class="text-xs text-gray-500 mt-2">All-time earnings</div>
                 </div>
 
-                <!-- Tax Paid -->
-                <div class="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-colors">
-                  <div class="flex items-center justify-between mb-4">
-                    <div class="p-2 bg-green-500/10 rounded-lg">
-                      <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                      </svg>
-                    </div>
-                    <span class="text-xs font-medium px-2 py-1 rounded-full bg-green-500/10 text-green-400">
-                      Paid
-                    </span>
-                  </div>
-                  <div class="text-sm text-gray-400 mb-1">Total Tax Paid</div>
-                  <div class="text-2xl font-bold text-white">${{ formatNumber(complianceData?.totalTaxPaid || 0) }}</div>
-                  <div class="text-xs text-gray-500 mt-2">Tax contributions</div>
-                </div>
 
-                <!-- Outstanding Tax -->
-                <div class="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-colors">
-                  <div class="flex items-center justify-between mb-4">
-                    <div class="p-2 bg-red-500/10 rounded-lg">
-                      <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                      </svg>
-                    </div>
-                    <span class="text-xs font-medium px-2 py-1 rounded-full bg-red-500/10 text-red-400">
-                      Due
-                    </span>
-                  </div>
-                  <div class="text-sm text-gray-400 mb-1">Outstanding Tax</div>
-                  <div class="text-2xl font-bold text-red-400">${{ formatNumber(complianceData?.outstandingTax || 0) }}</div>
-                  <div class="text-xs text-gray-500 mt-2">Amount due</div>
-                </div>
 
-                <!-- Total Tax Due (Liability) -->
+                <!-- Amount Due (Liability) -->
                 <div class="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-colors">
                   <div class="flex items-center justify-between mb-4">
                     <div class="p-2 bg-purple-500/10 rounded-lg">
@@ -171,7 +139,7 @@
                       Liability
                     </span>
                   </div>
-                  <div class="text-sm text-gray-400 mb-1">Total Tax Due</div>
+                  <div class="text-sm text-gray-400 mb-1">Amount Due</div>
                   <div class="text-2xl font-bold text-white">${{ formatNumber(complianceData?.totalTaxDue || 0) }}</div>
                   <div class="text-xs text-gray-500 mt-2">Total tax liability</div>
                 </div>
@@ -193,7 +161,7 @@
                         <circle cx="96" cy="96" r="80" stroke="#1f2937" stroke-width="16" fill="none"/>
                         <circle 
                           cx="96" cy="96" r="80" 
-                          :stroke="complianceData?.taxCompliant ? '#10b981' : '#ef4444'"
+                          :stroke="complianceData?.taxCompliant ? '#3b82f6' : '#ef4444'"
                           stroke-width="16" fill="none"
                           :stroke-dasharray="`${complianceScore * 5.026} 502.6`"
                           class="transition-all duration-1000"
@@ -207,11 +175,11 @@
                       </div>
                     </div>
                   </div>
-                  <div class="flex items-center justify-center space-x-8 mt-6">
+                  <div class="flex items-center justify-center space-x-6 mt-6">
                     <div class="flex items-center space-x-2">
                       <div :class="[
                         'w-3 h-3 rounded-full',
-                        complianceData?.taxCompliant ? 'bg-green-500' : 'bg-red-500'
+                        complianceData?.taxCompliant ? 'bg-blue-500' : 'bg-red-500'
                       ]"></div>
                       <span class="text-sm text-gray-400">
                         Status: {{ complianceData?.taxCompliant ? 'Compliant' : 'Non-Compliant' }}
@@ -230,11 +198,11 @@
                   <div class="space-y-4">
                     <div class="bg-gray-800/50 rounded-lg p-4">
                       <p class="text-xs text-gray-400 mb-1">Total Videos</p>
-                      <p class="text-2xl font-bold text-white">{{ complianceData?.totalVideosToDate || 0 }}</p>
+                      <p class="text-2xl font-bold text-white">{{ totalVideos }}</p>
                     </div>
                     <div class="bg-gray-800/50 rounded-lg p-4">
                       <p class="text-xs text-gray-400 mb-1">Total Shots</p>
-                      <p class="text-2xl font-bold text-red-400">{{ complianceData?.totalShotsToDate || 0 }}</p>
+                      <p class="text-2xl font-bold text-red-400">{{ totalShots }}</p>
                     </div>
                     <div class="bg-gray-800/50 rounded-lg p-4">
                       <p class="text-xs text-gray-400 mb-1">Tax Rate</p>
@@ -468,23 +436,39 @@ const currentPeriod = computed(() => {
 const complianceScore = computed(() => {
   if (!complianceData.value) return 0
   
-  const totalRevenue = complianceData.value.totalRevenueToDate || 0
-  const outstandingTax = complianceData.value.outstandingTax || 0
+  const totalTaxPaid = complianceData.value.totalTaxPaid || 0
+  const totalTaxDue = complianceData.value.totalTaxDue || 0
   
-  if (totalRevenue === 0) return 100
+  if (totalTaxDue <= 0) return 100
   
-  const paidPercentage = ((totalRevenue - outstandingTax) / totalRevenue) * 100
-  return Math.round(Math.max(0, Math.min(100, paidPercentage)))
+  const score = (totalTaxPaid / totalTaxDue) * 100
+  return Math.round(Math.max(0, Math.min(100, score)))
 })
 
 // Tax rate calculation
 const taxRate = computed(() => {
-  if (!complianceData.value) return 0
+  if (!complianceData.value) return 10.0
   const totalRevenue = complianceData.value.totalRevenueToDate || 0
-  const totalTaxPaid = complianceData.value.totalTaxPaid || 0
+  const totalTaxDue = complianceData.value.totalTaxDue || 0
   
-  if (totalRevenue === 0) return 0
-  return ((totalTaxPaid / totalRevenue) * 100).toFixed(1)
+  if (totalRevenue === 0) return 10.0
+  return ((totalTaxDue / totalRevenue) * 100).toFixed(1)
+})
+
+const totalVideos = computed(() => {
+  return channelData.value?.videoCount || complianceData.value?.totalVideosToDate || 0
+})
+
+const totalShots = computed(() => {
+  if (videosData.value && videosData.value.length > 0) {
+    return videosData.value.filter(v => {
+      if (!v.duration) return false
+      // YouTube durations are ISO 8601, e.g., PT1M2S, PT30S
+      // Shorts are typically < 60 seconds
+      return v.duration.includes('S') && !v.duration.includes('M') && !v.duration.includes('H')
+    }).length
+  }
+  return complianceData.value?.totalShotsToDate || 0
 })
 
 // Recent payments (last 5)

@@ -210,10 +210,7 @@
                                             <p class="text-xs text-gray-500">Total Tax Due</p>
                                             <p class="text-sm font-bold text-white">${{ formatCurrency(artist.totalTaxDue) }}</p>
                                         </div>
-                                        <div class="flex justify-between items-center">
-                                            <p class="text-xs text-gray-500">Total Tax Paid</p>
-                                            <p class="text-sm font-bold text-green-400">${{ formatCurrency(artist.totalTaxPaid) }}</p>
-                                        </div>
+
                                         <div class="flex justify-between items-center">
                                             <p class="text-xs text-gray-500">Predicted Increase</p>
                                             <p class="text-sm font-bold text-yellow-400">+${{ formatCurrency(artist.predictedTaxIncrease) }}</p>

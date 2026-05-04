@@ -59,7 +59,7 @@
 
             <template v-else>
               <!-- Stats Grid -->
-              <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <div class="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-colors">
                   <div class="flex items-center justify-between mb-4">
                     <div class="p-2 bg-blue-500/10 rounded-lg">
@@ -92,21 +92,7 @@
                   <div class="text-xs text-gray-500 mt-2">All-time revenue</div>
                 </div>
 
-                <div class="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-colors">
-                  <div class="flex items-center justify-between mb-4">
-                    <div class="p-2 bg-yellow-500/10 rounded-lg">
-                      <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                      </svg>
-                    </div>
-                    <span class="text-xs font-medium px-2 py-1 rounded-full bg-yellow-500/10 text-yellow-400">
-                      Collected
-                    </span>
-                  </div>
-                  <div class="text-sm text-gray-400 mb-1">Total Tax Collected</div>
-                  <div class="text-2xl font-bold text-white">${{ formatNumber(stats.totalTaxCollected) }}</div>
-                  <div class="text-xs text-gray-500 mt-2">Tax paid to date</div>
-                </div>
+
 
                 <div class="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-colors">
                   <div class="flex items-center justify-between mb-4">
@@ -135,7 +121,7 @@
                       Liability
                     </span>
                   </div>
-                  <div class="text-sm text-gray-400 mb-1">Total Tax Due</div>
+                  <div class="text-sm text-gray-400 mb-1">Amount Due</div>
                   <div class="text-2xl font-bold text-white">${{ formatNumber(stats.totalTaxDue) }}</div>
                   <div class="text-xs text-gray-500 mt-2">Total aggregate liability</div>
                 </div>
@@ -163,7 +149,17 @@
                           stroke-width="16"
                           fill="none"
                         />
-                        <!-- Compliant arc -->
+                        <!-- Non-compliant base (red) -->
+                        <circle
+                          cx="96"
+                          cy="96"
+                          r="80"
+                          stroke="#ef4444"
+                          stroke-width="16"
+                          fill="none"
+                          stroke-dasharray="502.6 502.6"
+                        />
+                        <!-- Compliant arc (green) -->
                         <circle
                           cx="96"
                           cy="96"
@@ -178,12 +174,12 @@
                       <div class="absolute inset-0 flex items-center justify-center">
                         <div class="text-center">
                           <div class="text-3xl font-bold text-white">{{ compliancePercentage }}%</div>
-                          <div class="text-sm text-gray-400">Compliant</div>
+                          <div class="text-sm text-gray-400">Compliance Rate</div>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div class="flex items-center justify-center space-x-8 mt-6">
+                  <div class="flex items-center justify-center space-x-6 mt-6">
                     <div class="flex items-center space-x-2">
                       <div class="w-3 h-3 rounded-full bg-green-500"></div>
                       <span class="text-sm text-gray-400">Compliant: {{ stats.compliant }}</span>
